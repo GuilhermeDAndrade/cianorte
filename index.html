@@ -5,15 +5,22 @@
     <title>Auth0 + GitHub Pages</title>
 </head>
 <body>
-    <h1 id="status">Não autenticado v2</h1>
+    <h1 id="status">Não autenticado</h1>
     <button id="login">Login</button>
     <button id="logout" style="display:none">Logout</button>
     <pre id="profile"></pre>
 
-    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.4/auth0-spa-js.production.js"></script>
+    <!-- Biblioteca Auth0 SPA JS -->
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/latest/auth0-spa-js.production.js"></script>
 
     <script>
-    (async () => {
+    window.addEventListener('load', async () => {
+        // Confere se a biblioteca carregou
+        if (!window.createAuth0Client) {
+            console.error("Auth0 não carregou ainda. Verifique a conexão e a versão da biblioteca.");
+            return;
+        }
+
         const auth0 = await createAuth0Client({
             domain: 'dev-w4rfqnx62cw47zry.us.auth0.com',
             clientId: 'DznjI6Vuq5TLh4VzRpukgeltN7c5u91u',
@@ -30,7 +37,7 @@
                 console.error("Erro no handleRedirectCallback:", e);
                 alert("Erro no callback: " + e.message);
             }
-            // limpa a URL para remover os parâmetros de autenticação
+            // Limpa a URL
             window.history.replaceState({}, document.title, window.location.pathname);
         }
 
@@ -40,18 +47,23 @@
         const profileEl = document.getElementById('profile');
 
         const isAuthenticated = await auth0.isAuthenticated();
-        if (isAuthenticated) {
-            statusEl.textContent = 'Autenticado';
-            loginBtn.style.display = 'none';
-            logoutBtn.style.display = 'inline-block';
-            const user = await auth0.getUser();
-            profileEl.textContent = JSON.stringify(user, null, 2);
-        } else {
-            statusEl.textContent = 'Não autenticado';
-            loginBtn.style.display = 'inline-block';
-            logoutBtn.style.display = 'none';
-            profileEl.textContent = '';
-        }
+
+        const updateUI = async () => {
+            if (await auth0.isAuthenticated()) {
+                statusEl.textContent = 'Autenticado';
+                loginBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
+                const user = await auth0.getUser();
+                profileEl.textContent = JSON.stringify(user, null, 2);
+            } else {
+                statusEl.textContent = 'Não autenticado';
+                loginBtn.style.display = 'inline-block';
+                logoutBtn.style.display = 'none';
+                profileEl.textContent = '';
+            }
+        };
+
+        await updateUI();
 
         loginBtn.onclick = async () => {
             try {
@@ -69,7 +81,7 @@
                 }
             });
         };
-    })();
+    });
     </script>
 </body>
 </html>
