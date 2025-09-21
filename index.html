@@ -1,71 +1,75 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8"/>
-  <title>Auth0 + GitHub Pages</title>
+    <meta charset="utf-8"/>
+    <title>Auth0 + GitHub Pages</title>
 </head>
 <body>
-  <h1 id="status">Não autenticado</h1>
-  <button id="login">Login</button>
-  <button id="logout" style="display:none">Logout</button>
-  <pre id="profile"></pre>
+    <h1 id="status">Não autenticado</h1>
+    <button id="login">Login</button>
+    <button id="logout" style="display:none">Logout</button>
+    <pre id="profile"></pre>
 
-  <!-- auth0-spa-js via CDN -->
-  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.4/auth0-spa-js.production.js"></script>
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.4/auth0-spa-js.production.js"></script>
 
-  <script>
-  (async () => {
-    const auth0 = await createAuth0Client({
-      domain: 'dev-w4rfqnx62cw47zry.us.auth0.com',      
-      client_id: 'DznjI6Vuq5TLh4VzRpukgeltN7c5u91u',     
-      authorizationParams: {
-        redirect_uri: "https://guilhermedandrade.github.io/cianorte/"
-      }
-    });
+    <script>
+    (async () => {
+        const auth0 = await createAuth0Client({
+            domain: 'dev-w4rfqnx62cw47zry.us.auth0.com',
+            clientId: 'DznjI6Vuq5TLh4VzRpukgeltN7c5u91u',
+            authorizationParams: {
+                redirect_uri: "https://guilhermedandrade.github.io/cianorte/"
+            }
+        });
 
-    // Se vier do redirect do Auth0 (code & state), finalize o fluxo
-    if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-      try {
-        await auth0.handleRedirectCallback();
-      } catch (e) {
-        console.error("Erro no handleRedirectCallback:", e);
-        alert("Erro no callback: " + e.message);
-      }
-      // limpa querystring
-      window.history.replaceState({}, document.title, "/cianorte/");
-    }
+        // Se vier do redirect do Auth0 (code & state), finalize o fluxo
+        if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
+            try {
+                await auth0.handleRedirectCallback();
+            } catch (e) {
+                console.error("Erro no handleRedirectCallback:", e);
+                alert("Erro no callback: " + e.message);
+            }
+            // limpa a URL para remover os parâmetros de autenticação
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
 
-    const loginBtn = document.getElementById('login');
-    const logoutBtn = document.getElementById('logout');
-    const statusEl = document.getElementById('status');
-    const profileEl = document.getElementById('profile');
+        const loginBtn = document.getElementById('login');
+        const logoutBtn = document.getElementById('logout');
+        const statusEl = document.getElementById('status');
+        const profileEl = document.getElementById('profile');
 
-    const isAuthenticated = await auth0.isAuthenticated();
-    if (isAuthenticated) {
-      statusEl.textContent = 'Autenticado';
-      loginBtn.style.display = 'none';
-      logoutBtn.style.display = '';
-      const user = await auth0.getUser();
-      profileEl.textContent = JSON.stringify(user, null, 2);
-    } else {
-      statusEl.textContent = 'Não autenticado';
-      loginBtn.style.display = '';
-      logoutBtn.style.display = 'none';
-    }
+        const isAuthenticated = await auth0.isAuthenticated();
+        if (isAuthenticated) {
+            statusEl.textContent = 'Autenticado';
+            loginBtn.style.display = 'none';
+            logoutBtn.style.display = 'inline-block';
+            const user = await auth0.getUser();
+            profileEl.textContent = JSON.stringify(user, null, 2);
+        } else {
+            statusEl.textContent = 'Não autenticado';
+            loginBtn.style.display = 'inline-block';
+            logoutBtn.style.display = 'none';
+            profileEl.textContent = '';
+        }
 
-    loginBtn.onclick = async () => { 
-      try {
-        await auth0.loginWithRedirect();
-      } catch (e) {
-        console.error("Erro no login:", e);
-        alert("Erro no login: " + e.message);
-      }
-    };
+        loginBtn.onclick = async () => {
+            try {
+                await auth0.loginWithRedirect();
+            } catch (e) {
+                console.error("Erro no login:", e);
+                alert("Erro no login: " + e.message);
+            }
+        };
 
-    logoutBtn.onclick = () => {
-      auth0.logout({ returnTo: "https://guilhermedandrade.github.io/cianorte/" });
-    };
-  })();
-  </script>
+        logoutBtn.onclick = () => {
+            auth0.logout({
+                logoutParams: {
+                    returnTo: "https://guilhermedandrade.github.io/cianorte/"
+                }
+            });
+        };
+    })();
+    </script>
 </body>
 </html>
