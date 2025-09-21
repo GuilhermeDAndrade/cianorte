@@ -16,18 +16,23 @@
   <script>
   (async () => {
     const auth0 = await createAuth0Client({
-      domain: 'dev-w4rfqnx62cw47zry.us.auth0.com',      // ex: dev-abc123.us.auth0.com
-      client_id: 'DznjI6Vuq5TLh4VzRpukgeltN7c5u91u',      // do app Auth0
+      domain: 'dev-w4rfqnx62cw47zry.us.auth0.com',      
+      client_id: 'DznjI6Vuq5TLh4VzRpukgeltN7c5u91u',     
       authorizationParams: {
-        redirect_uri: window.location.origin + window.location.pathname
+        redirect_uri: "https://guilhermedandrade.github.io/cianorte/"
       }
     });
 
     // Se vier do redirect do Auth0 (code & state), finalize o fluxo
     if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-      await auth0.handleRedirectCallback();
+      try {
+        await auth0.handleRedirectCallback();
+      } catch (e) {
+        console.error("Erro no handleRedirectCallback:", e);
+        alert("Erro no callback: " + e.message);
+      }
       // limpa querystring
-      window.history.replaceState({}, document.title, window.location.pathname);
+      window.history.replaceState({}, document.title, "/cianorte/");
     }
 
     const loginBtn = document.getElementById('login');
@@ -48,9 +53,17 @@
       logoutBtn.style.display = 'none';
     }
 
-    loginBtn.onclick = async () => { await auth0.loginWithRedirect(); };
+    loginBtn.onclick = async () => { 
+      try {
+        await auth0.loginWithRedirect();
+      } catch (e) {
+        console.error("Erro no login:", e);
+        alert("Erro no login: " + e.message);
+      }
+    };
+
     logoutBtn.onclick = () => {
-      auth0.logout({ returnTo: window.location.origin + window.location.pathname });
+      auth0.logout({ returnTo: "https://guilhermedandrade.github.io/cianorte/" });
     };
   })();
   </script>
