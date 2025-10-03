@@ -1,0 +1,37 @@
+openapi: 3.0.1
+info:
+  title: ChatGPT Trello API
+  description: API para criar cards no Trello a partir do ChatGPT
+  version: "1.0.0"
+servers:
+  - url: https://cianorte.vercel.app
+paths:
+  /create-card:
+    post:
+      summary: Criar um card no Trello
+      operationId: createCard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  example: "Revisar contrato"
+                description:
+                  type: string
+                  example: "Revisar contrato com cliente amanhã às 15h"
+      responses:
+        "200":
+          description: Card criado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  card:
+                    type: object

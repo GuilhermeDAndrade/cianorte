@@ -27,5 +27,5 @@ app.post("/create-card", async (req, res) => {
   }
 });
 
-// porta que o Vercel vai usar
+// porta que o Vercel usa
 app.listen(3000, () => console.log("Server rodando na Vercel"));
