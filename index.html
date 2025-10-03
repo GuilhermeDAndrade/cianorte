@@ -1,87 +1,26 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8"/>
-    <title>Auth0 + GitHub Pages</title>
-</head>
-<body>
-    <h1 id="status">Não autenticado</h1>
-    <button id="login">Login</button>
-    <button id="logout" style="display:none">Logout</button>
-    <pre id="profile"></pre>
-
-    <!-- Biblioteca Auth0 SPA JS -->
-    <script src="https://cdn.auth0.com/js/auth0-spa-js/latest/auth0-spa-js.production.js"></script>
+  <head>
+    <meta charset="utf-8">
+    <title>Trello + ChatGPT Power-Up</title>
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  </head>
+  <body>
+    <h3>Meu Power-Up ChatGPT</h3>
+    <button id="criar">Criar Card com GPT</button>
 
     <script>
-    window.addEventListener('load', async () => {
-        // Confere se a biblioteca carregou
-        if (!window.createAuth0Client) {
-            console.error("Auth0 não carregou ainda. Verifique a conexão e a versão da biblioteca.");
-            return;
-        }
+      var t = TrelloPowerUp.iframe();
 
-        const auth0 = await createAuth0Client({
-            domain: 'dev-w4rfqnx62cw47zry.us.auth0.com',
-            clientId: 'DznjI6Vuq5TLh4VzRpukgeltN7c5u91u',
-            authorizationParams: {
-                redirect_uri: "https://guilhermedandrade.github.io/cianorte/"
-            }
+      document.getElementById("criar").addEventListener("click", async () => {
+        const resp = await fetch("https://seu-backend.com/criar-card", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: "Gerar uma tarefa de exemplo" })
         });
-
-        // Se vier do redirect do Auth0 (code & state), finalize o fluxo
-        if (window.location.search.includes('code=') && window.location.search.includes('state=')) {
-            try {
-                await auth0.handleRedirectCallback();
-            } catch (e) {
-                console.error("Erro no handleRedirectCallback:", e);
-                alert("Erro no callback: " + e.message);
-            }
-            // Limpa a URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-
-        const loginBtn = document.getElementById('login');
-        const logoutBtn = document.getElementById('logout');
-        const statusEl = document.getElementById('status');
-        const profileEl = document.getElementById('profile');
-
-        const isAuthenticated = await auth0.isAuthenticated();
-
-        const updateUI = async () => {
-            if (await auth0.isAuthenticated()) {
-                statusEl.textContent = 'Autenticado';
-                loginBtn.style.display = 'none';
-                logoutBtn.style.display = 'inline-block';
-                const user = await auth0.getUser();
-                profileEl.textContent = JSON.stringify(user, null, 2);
-            } else {
-                statusEl.textContent = 'Não autenticado';
-                loginBtn.style.display = 'inline-block';
-                logoutBtn.style.display = 'none';
-                profileEl.textContent = '';
-            }
-        };
-
-        await updateUI();
-
-        loginBtn.onclick = async () => {
-            try {
-                await auth0.loginWithRedirect();
-            } catch (e) {
-                console.error("Erro no login:", e);
-                alert("Erro no login: " + e.message);
-            }
-        };
-
-        logoutBtn.onclick = () => {
-            auth0.logout({
-                logoutParams: {
-                    returnTo: "https://guilhermedandrade.github.io/cianorte/"
-                }
-            });
-        };
-    });
+        const data = await resp.json();
+        alert("Card criado: " + data.trelloData.name);
+      });
     </script>
-</body>
+  </body>
 </html>
