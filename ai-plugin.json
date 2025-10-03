@@ -1,9 +1,9 @@
 {
   "schema_version": "v1",
-  "name_for_human": "ChatGPT → Trello",
-  "name_for_model": "trello_manager",
-  "description_for_human": "Cria cards no Trello diretamente pelo ChatGPT.",
-  "description_for_model": "Use this plugin to create Trello cards. Send title and description, it will return card link.",
+  "name_for_human": "Cianorte Trello",
+  "name_for_model": "cianorte_trello",
+  "description_for_human": "Crie e gerencie cards no Trello com ChatGPT.",
+  "description_for_model": "Plugin para criar e gerenciar cards em um board específico do Trello.",
   "auth": {
     "type": "none"
   },
@@ -11,7 +11,7 @@
     "type": "openapi",
     "url": "https://cianorte.vercel.app/openapi.yaml"
   },
-  "logo_url": "https://cdn-icons-png.flaticon.com/512/5968/5968895.png",
+  "logo_url": "https://cianorte.vercel.app/logo.png",
   "contact_email": "guilherme.gob@hotmail.com",
-  "legal_info_url": "https://cianorte.vercel.app/legal.html"
+  "legal_info_url": "https://cianorte.vercel.app/legal"
 }
