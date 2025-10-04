@@ -1,8 +1,19 @@
 // cianorte/api/trello.js
 import fetch from "node-fetch";
-import boards from './trello_boards_id.json'; // JSON com mapeamento boardName -> idList
+import fs from "fs";
+import path from "path";
 
 let boardCache = {}; // cache opcional em memória
+
+// Carrega JSON de forma segura
+const jsonPath = path.join(process.cwd(), "api/trello_boards_id.json");
+let boards = {};
+try {
+  boards = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+  console.log("DEBUG: Boards carregados:", boards);
+} catch (e) {
+  console.error("DEBUG ERROR: Não foi possível carregar trello_boards_id.json", e);
+}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -11,7 +22,6 @@ export default async function handler(req, res) {
 
   const { action, name, cardId, memberId, labelId, boardName } = req.body;
 
-  // Debug inicial
   console.log("DEBUG KEY:", process.env.TRELLO_KEY?.slice(0, 8));
   console.log("DEBUG TOKEN:", process.env.TRELLO_TOKEN?.slice(0, 8));
 
@@ -20,7 +30,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // ----------------- Função auxiliar -----------------
     const getListId = (boardName) => {
       const idList = boards[boardName];
       if (!idList) console.warn(`DEBUG: Board "${boardName}" não encontrado no JSON`);
@@ -31,7 +40,7 @@ export default async function handler(req, res) {
     if (action === "create_card") {
       if (!name) return res.status(400).json({ error: "O campo 'name' é obrigatório" });
 
-      const listId = getListId(boardName || "Faturamento"); // default "Faturamento"
+      const listId = getListId(boardName || "Faturamento");
       if (!listId) return res.status(400).json({ error: `Board "${boardName}" não encontrado` });
 
       console.log(`DEBUG: Criando card "${name}" no board "${boardName}" (idList=${listId})`);
