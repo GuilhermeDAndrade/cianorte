@@ -30,14 +30,22 @@ app.post("/create-card", async (req, res) => {
 });
 
 // ------------------------------
-// Listar boards do usuário
+// Listar todos os boards com short ID e long ID
 // ------------------------------
 app.get("/list-boards", async (req, res) => {
   try {
     const url = `https://api.trello.com/1/members/me/boards?key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
     const response = await fetch(url);
     const boards = await response.json();
-    res.json({ success: true, boards });
+
+    // Mapeia para short ID e long ID
+    const formattedBoards = boards.map(board => ({
+      name: board.name,
+      shortId: board.shortLink,   // usado na URL
+      longId: board.id             // usado pela API
+    }));
+
+    res.json({ success: true, boards: formattedBoards });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
