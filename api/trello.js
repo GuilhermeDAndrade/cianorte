@@ -1,54 +1,23 @@
 // cianorte/api/trello.js
 import fetch from "node-fetch";
-import fs from "fs";
-import path from "path";
 
 let boardCache = {}; // cache opcional em memória
-
-// Carrega JSON de forma segura
-const jsonPath = path.join(process.cwd(), "api/trello_boards_id.json");
-let boards = {};
-try {
-  boards = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
-  console.log("DEBUG: Boards carregados:", boards);
-} catch (e) {
-  console.error("DEBUG ERROR: Não foi possível carregar trello_boards_id.json", e);
-}
-
-// ----------------- Função para resolver boardName -> ID -----------------
-function resolveBoardId(boardName, boardsMapping) {
-  return boardsMapping[boardName] || null;
-}
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
   }
 
-  const { action, name, cardId, memberId, labelId, boardName } = req.body;
-
-  console.log("DEBUG KEY:", process.env.TRELLO_KEY?.slice(0, 8));
-  console.log("DEBUG TOKEN:", process.env.TRELLO_TOKEN?.slice(0, 8));
+  const { action, name, cardId, memberId, labelId, boardId, listId } = req.body;
 
   if (!process.env.TRELLO_KEY || !process.env.TRELLO_TOKEN) {
     return res.status(500).json({ error: "Env vars não configuradas" });
   }
 
   try {
-    const getListId = (boardName) => {
-      const idList = boards[boardName];
-      if (!idList) console.warn(`DEBUG: Board "${boardName}" não encontrado no JSON`);
-      return idList;
-    };
-
     // ----------------- CREATE CARD -----------------
     if (action === "create_card") {
-      if (!name) return res.status(400).json({ error: "O campo 'name' é obrigatório" });
-
-      const listId = getListId(boardName || "Faturamento");
-      if (!listId) return res.status(400).json({ error: `Board "${boardName}" não encontrado` });
-
-      console.log(`DEBUG: Criando card "${name}" no board "${boardName}" (idList=${listId})`);
+      if (!name || !listId) return res.status(400).json({ error: "'name' e 'listId' são obrigatórios" });
 
       const url = `https://api.trello.com/1/cards?idList=${listId}&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url, {
@@ -57,21 +26,16 @@ export default async function handler(req, res) {
         body: new URLSearchParams({ name }),
       });
 
-      const text = await response.text();
-      if (!response.ok) {
-        console.error("DEBUG: Erro ao criar card:", text);
-        return res.status(response.status).json({ error: "Erro ao criar card", details: text });
-      }
+      const data = await response.json();
+      if (!response.ok) return res.status(response.status).json({ error: "Erro ao criar card", details: data });
 
-      console.log("DEBUG: Card criado com sucesso");
-      return res.status(200).json(JSON.parse(text));
+      return res.status(200).json(data);
     }
 
     // ----------------- UPDATE CARD -----------------
     if (action === "update_card") {
       if (!cardId || !name) return res.status(400).json({ error: "cardId e name são obrigatórios" });
 
-      console.log(`DEBUG: Atualizando card ${cardId} para nome "${name}"`);
       const url = `https://api.trello.com/1/cards/${cardId}?key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url, {
         method: "PUT",
@@ -87,7 +51,6 @@ export default async function handler(req, res) {
     if (action === "add_member") {
       if (!cardId || !memberId) return res.status(400).json({ error: "cardId e memberId são obrigatórios" });
 
-      console.log(`DEBUG: Adicionando membro ${memberId} ao card ${cardId}`);
       const url = `https://api.trello.com/1/cards/${cardId}/idMembers?value=${memberId}&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url, { method: "POST" });
       const data = await response.json();
@@ -98,7 +61,6 @@ export default async function handler(req, res) {
     if (action === "add_label") {
       if (!cardId || !labelId) return res.status(400).json({ error: "cardId e labelId são obrigatórios" });
 
-      console.log(`DEBUG: Adicionando label ${labelId} ao card ${cardId}`);
       const url = `https://api.trello.com/1/cards/${cardId}/idLabels?value=${labelId}&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url, { method: "POST" });
       const data = await response.json();
@@ -107,23 +69,17 @@ export default async function handler(req, res) {
 
     // ----------------- GET BOARD -----------------
     if (action === "get_board") {
-      const id = resolveBoardId(boardName, boards);
-      if (!id) return res.status(400).json({ error: `Board "${boardName}" não encontrado` });
+      if (!boardId) return res.status(400).json({ error: "'boardId' é obrigatório" });
 
-      if (boardCache[id]) {
-        console.log("DEBUG: Retornando board do cache");
-        return res.status(200).json(boardCache[id]);
+      if (boardCache[boardId]) {
+        return res.status(200).json(boardCache[boardId]);
       }
 
-      console.log(`DEBUG: Buscando dados do board (id=${id})`);
-      const url = `https://api.trello.com/1/boards/${id}?lists=all&cards=open&members=all&labels=all&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
+      const url = `https://api.trello.com/1/boards/${boardId}?lists=all&cards=open&members=all&labels=all&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url);
       const boardData = await response.json();
 
-      if (!response.ok) {
-        console.error("DEBUG: Erro ao buscar board:", boardData);
-        return res.status(response.status).json({ error: "Erro ao buscar board", details: boardData });
-      }
+      if (!response.ok) return res.status(response.status).json({ error: "Erro ao buscar board", details: boardData });
 
       const parsed = {
         boardName: boardData.name,
@@ -141,14 +97,12 @@ export default async function handler(req, res) {
         }))
       };
 
-      boardCache[id] = parsed;
+      boardCache[boardId] = parsed;
       return res.status(200).json(parsed);
     }
 
     return res.status(400).json({ error: "Ação inválida" });
-
   } catch (error) {
-    console.error("DEBUG ERROR:", error);
     return res.status(500).json({ error: "Erro na integração com Trello", details: error.message });
   }
 }
