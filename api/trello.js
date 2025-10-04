@@ -4,6 +4,17 @@ import fetch from "node-fetch";
 let boardCache = {}; // cache opcional em memória
 
 export default async function handler(req, res) {
+  // ----------------- Headers CORS -----------------
+  res.setHeader('Access-Control-Allow-Origin', '*'); // permite qualquer origem
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS'); // métodos permitidos
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // headers permitidos
+
+  // Responde pré-requisições OPTIONS
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // ----------------- Verificação do método POST -----------------
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
   }
