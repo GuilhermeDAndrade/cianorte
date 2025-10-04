@@ -102,15 +102,15 @@ export default async function handler(req, res) {
 
     // ----------------- GET BOARD -----------------
     if (action === "get_board") {
-      const id = getListId(boardName);
-      if (!id) return res.status(400).json({ error: `Board "${boardName}" não encontrado` });
+      const id = resolveBoardId(boardName, board_id);
+      if (!id) return res.status(400).json({ error: `Board não encontrado` });
 
       if (boardCache[id]) {
         console.log("DEBUG: Retornando board do cache");
         return res.status(200).json(boardCache[id]);
       }
 
-      console.log(`DEBUG: Buscando dados do board "${boardName}" (id=${id})`);
+      console.log(`DEBUG: Buscando dados do board (id=${id})`);
       const url = `https://api.trello.com/1/boards/${id}?lists=all&cards=open&members=all&labels=all&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url);
       const boardData = await response.json();
@@ -146,3 +146,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Erro na integração com Trello", details: error.message });
   }
 }
+
