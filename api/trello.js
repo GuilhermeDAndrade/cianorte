@@ -23,41 +23,42 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Env vars não configuradas" });
 
   try {
-    // ----------------- CREATE CARD -----------------
-    if (action === "create_card") {
-      if (!name || !listId)
-        return res
-          .status(400)
-          .json({ error: "'name' e 'listId' são obrigatórios" });
+// ----------------- CREATE CARD -----------------
+if (action === "create_card") {
+  if (!name || !listId)
+    return res
+      .status(400)
+      .json({ error: "'name' e 'listId' são obrigatórios" });
 
-      const url = `https://api.trello.com/1/cards?key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
-      const body = new URLSearchParams({
-        idList: listId,
-        name,
-        desc: desc || "",
-      });
+  const url = `https://api.trello.com/1/cards?key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      });
+  // Cria params e converte para string antes do envio
+  const params = new URLSearchParams({
+    idList: listId,
+    name,
+    desc: desc || "",
+  }).toString();
 
-      let data;
-      try {
-        data = await response.json();
-      } catch {
-        data = await response.text();
-      }
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params, // agora é string, não objeto
+  });
 
-      if (!response.ok)
-        return res
-          .status(response.status)
-          .json({ error: "Erro ao criar card", details: data });
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    data = await response.text();
+  }
 
-      return res.status(200).json({ success: true, card: data });
-    }
+  if (!response.ok)
+    return res
+      .status(response.status)
+      .json({ error: "Erro ao criar card", details: data });
 
+  return res.status(200).json({ success: true, card: data });
+}
     // ----------------- UPDATE CARD -----------------
     if (action === "update_card") {
       if (!cardId)
