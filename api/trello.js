@@ -95,7 +95,7 @@ export default async function handler(req, res) {
               id: card.id, // cardId
               name: card.name,
               due: card.due,
-              createdAt: card.createdAt
+              createdAt: card.createdAt,
               dueComplete: card.dueComplete,
               desc: card.desc,
               members: card.idMembers.map(id => boardData.members.find(m => m.id === id)?.fullName || id),
