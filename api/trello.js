@@ -15,6 +15,11 @@ try {
   console.error("DEBUG ERROR: Não foi possível carregar trello_boards_id.json", e);
 }
 
+// ----------------- Função para resolver boardName -> ID -----------------
+function resolveBoardId(boardName, boardsMapping) {
+  return boardsMapping[boardName] || null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST allowed" });
@@ -102,8 +107,8 @@ export default async function handler(req, res) {
 
     // ----------------- GET BOARD -----------------
     if (action === "get_board") {
-      const id = resolveBoardId(boardName, board_id);
-      if (!id) return res.status(400).json({ error: `Board não encontrado` });
+      const id = resolveBoardId(boardName, boards);
+      if (!id) return res.status(400).json({ error: `Board "${boardName}" não encontrado` });
 
       if (boardCache[id]) {
         console.log("DEBUG: Retornando board do cache");
@@ -130,7 +135,8 @@ export default async function handler(req, res) {
               name: card.name,
               desc: card.desc,
               members: card.idMembers.map(id => boardData.members.find(m => m.id === id)?.fullName || id),
-              labels: card.idLabels.map(id => boardData.labels.find(l => l.id === id)?.name || id)
+              labels: card.idLabels.map(id => boardData.labels.find(l => l.id === id)?.name || id),
+              url: card.shortUrl || card.url
             }))
         }))
       };
@@ -146,4 +152,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Erro na integração com Trello", details: error.message });
   }
 }
-
