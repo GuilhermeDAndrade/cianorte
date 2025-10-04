@@ -1,6 +1,10 @@
 // cianorte/api/trello.js
 import fetch from "node-fetch";
 
+export const config = {
+  runtime: "nodejs20.x", // ✅ força execução no runtime Node (corrige "body used already")
+};
+
 let boardCache = {}; // cache opcional em memória
 
 export default async function handler(req, res) {
@@ -168,7 +172,7 @@ export default async function handler(req, res) {
         idList: listId,
         key: process.env.TRELLO_KEY,
         token: process.env.TRELLO_TOKEN,
-      }).toString();
+      }).toString(); // ✅ garante string pura (evita "body used already")
 
       const response = await fetch(`${url}?${params}`, { method: "PUT" });
 
@@ -184,7 +188,9 @@ export default async function handler(req, res) {
           .status(response.status)
           .json({ error: "Erro ao mover card", details: data });
 
-      return res.status(200).json({ success: true, movedTo: listId, card: data });
+      return res
+        .status(200)
+        .json({ success: true, movedTo: listId, card: data });
     }
 
     // ----------------- GET BOARD (não alterado) -----------------
