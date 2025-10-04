@@ -160,39 +160,49 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, label: labelId });
     }
 
-    // ----------------- MOVE CARD -----------------
-    if (action === "move_card") {
-      if (!cardId || !listId)
-        return res
-          .status(400)
-          .json({ error: "cardId e listId são obrigatórios" });
-
-      const url = `https://api.trello.com/1/cards/${cardId}`;
-      const params = new URLSearchParams({
-        idList: listId,
-        key: process.env.TRELLO_KEY,
-        token: process.env.TRELLO_TOKEN,
-      }).toString(); // ✅ garante string pura (evita "body used already")
-
-      const response = await fetch(`${url}?${params}`, { method: "PUT" });
-
-      let data;
-      try {
-        data = await response.json();
-      } catch {
-        data = await response.text();
+      // ----------------- MOVE CARD -----------------
+      if (action === "move_card") {
+        if (!cardId || !listId)
+          return res
+            .status(400)
+            .json({ error: "cardId e listId são obrigatórios" });
+      
+        const url = `https://api.trello.com/1/cards/${cardId}`;
+      
+        // 🧩 Gera um novo corpo (body) a cada execução — nunca é reutilizado
+        const body = new URLSearchParams({
+          idList: listId,
+          key: process.env.TRELLO_KEY,
+          token: process.env.TRELLO_TOKEN,
+        });
+      
+        const response = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          // ⚡ Aqui é o segredo: transforma o body em string, garantindo que o stream seja novo
+          body: body.toString(),
+        });
+      
+        let data;
+        try {
+          data = await response.json();
+        } catch {
+          data = await response.text();
+        }
+      
+        if (!response.ok)
+          return res
+            .status(response.status)
+            .json({ error: "Erro ao mover card", details: data });
+      
+        return res.status(200).json({
+          success: true,
+          movedTo: listId,
+          card: data,
+        });
       }
-
-      if (!response.ok)
-        return res
-          .status(response.status)
-          .json({ error: "Erro ao mover card", details: data });
-
-      return res
-        .status(200)
-        .json({ success: true, movedTo: listId, card: data });
-    }
-
     // ----------------- GET BOARD (não alterado) -----------------
     if (action === "get_board") {
       if (!boardId)
