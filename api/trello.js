@@ -71,16 +71,19 @@ export default async function handler(req, res) {
     if (action === "get_board") {
       if (!boardId) return res.status(400).json({ error: "'boardId' é obrigatório" });
 
+      // Retorna do cache se já estiver armazenado
       if (boardCache[boardId]) {
         return res.status(200).json(boardCache[boardId]);
       }
 
+      // Chamada direta à API oficial do Trello
       const url = `https://api.trello.com/1/boards/${boardId}?lists=all&cards=open&members=all&labels=all&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url);
       const boardData = await response.json();
 
       if (!response.ok) return res.status(response.status).json({ error: "Erro ao buscar board", details: boardData });
 
+      // Parse simplificado para listas e cards
       const parsed = {
         boardName: boardData.name,
         lists: boardData.lists.map(list => ({
@@ -97,7 +100,9 @@ export default async function handler(req, res) {
         }))
       };
 
+      // Armazena em cache
       boardCache[boardId] = parsed;
+
       return res.status(200).json(parsed);
     }
 
