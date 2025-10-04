@@ -43,7 +43,13 @@ export default async function handler(req, res) {
         body,
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = await response.text();
+      }
+
       if (!response.ok)
         return res
           .status(response.status)
@@ -70,7 +76,13 @@ export default async function handler(req, res) {
         body: JSON.stringify(body),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = await response.text();
+      }
+
       if (!response.ok)
         return res
           .status(response.status)
@@ -88,7 +100,13 @@ export default async function handler(req, res) {
 
       const url = `https://api.trello.com/1/cards/${cardId}/idMembers?value=${memberId}&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url, { method: "POST" });
-      const data = await response.json();
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = await response.text();
+      }
 
       if (!response.ok)
         return res
@@ -107,7 +125,13 @@ export default async function handler(req, res) {
 
       const url = `https://api.trello.com/1/cards/${cardId}/idLabels?value=${labelId}&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url, { method: "POST" });
-      const data = await response.json();
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = await response.text();
+      }
 
       if (!response.ok)
         return res
