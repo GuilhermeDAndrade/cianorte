@@ -111,7 +111,7 @@ export default async function handler(req, res) {
       }
 
       console.log(`DEBUG: Buscando dados do board "${boardName}" (id=${id})`);
-      const url = `https://api.trello.com/1/boards/${id}?lists=all&cards=all&members=all&labels=all&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
+      const url = `https://api.trello.com/1/boards/${id}?lists=all&cards=open&members=all&labels=all&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
       const response = await fetch(url);
       const boardData = await response.json();
 
