@@ -83,14 +83,16 @@ export default async function handler(req, res) {
 
       if (!response.ok) return res.status(response.status).json({ error: "Erro ao buscar board", details: boardData });
 
-      // Parse simplificado para listas e cards
+      // Parse simplificado para listas e cards, incluindo id de listas e cards
       const parsed = {
         boardName: boardData.name,
         lists: boardData.lists.map(list => ({
+          id: list.id, // listId
           name: list.name,
           cards: boardData.cards
             .filter(card => card.idList === list.id)
             .map(card => ({
+              id: card.id, // cardId
               name: card.name,
               desc: card.desc,
               members: card.idMembers.map(id => boardData.members.find(m => m.id === id)?.fullName || id),
