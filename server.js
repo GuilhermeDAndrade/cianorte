@@ -5,15 +5,31 @@ const app = express();
 app.use(express.json());
 
 // ------------------------------
-// Criar card
+// Criar card dinamicamente na primeira lista do board
 // ------------------------------
 app.post("/create-card", async (req, res) => {
-  const { title, description, listId } = req.body;
+  const { title, description, boardId } = req.body;
+
+  if (!boardId) {
+    return res.status(400).json({ success: false, error: "boardId é obrigatório" });
+  }
 
   try {
-    const url = `https://api.trello.com/1/cards?idList=${listId || process.env.TRELLO_LIST_ID}&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
-    
-    const response = await fetch(url, {
+    // Pega as listas do board
+    const listsUrl = `https://api.trello.com/1/boards/${boardId}/lists?key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
+    const listsRes = await fetch(listsUrl);
+    const lists = await listsRes.json();
+
+    if (!lists || lists.length === 0) {
+      return res.status(400).json({ success: false, error: "Não há listas disponíveis neste board" });
+    }
+
+    // Pega a primeira lista do board
+    const listId = lists[0].id;
+
+    // Cria o card
+    const createUrl = `https://api.trello.com/1/cards?idList=${listId}&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
+    const response = await fetch(createUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -38,7 +54,6 @@ app.get("/list-boards", async (req, res) => {
     const response = await fetch(url);
     const boards = await response.json();
 
-    // Mapeia para short ID e long ID
     const formattedBoards = boards.map(board => ({
       name: board.name,
       shortId: board.shortLink,   // usado na URL
