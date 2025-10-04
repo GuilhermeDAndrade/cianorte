@@ -23,42 +23,39 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Env vars não configuradas" });
 
   try {
-// ----------------- CREATE CARD -----------------
-if (action === "create_card") {
-  if (!name || !listId)
-    return res
-      .status(400)
-      .json({ error: "'name' e 'listId' são obrigatórios" });
+    // ----------------- CREATE CARD -----------------
+    if (action === "create_card") {
+      if (!name || !listId)
+        return res
+          .status(400)
+          .json({ error: "'name' e 'listId' são obrigatórios" });
 
-  const url = `https://api.trello.com/1/cards?key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
+      const url = `https://api.trello.com/1/cards`;
+      const params = new URLSearchParams({
+        idList: listId,
+        name,
+        desc: desc || "",
+        key: process.env.TRELLO_KEY,
+        token: process.env.TRELLO_TOKEN,
+      }).toString();
 
-  // Cria params e converte para string antes do envio
-  const params = new URLSearchParams({
-    idList: listId,
-    name,
-    desc: desc || "",
-  }).toString();
+      const response = await fetch(`${url}?${params}`, { method: "POST" });
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params, // agora é string, não objeto
-  });
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = await response.text();
+      }
 
-  let data;
-  try {
-    data = await response.json();
-  } catch {
-    data = await response.text();
-  }
+      if (!response.ok)
+        return res
+          .status(response.status)
+          .json({ error: "Erro ao criar card", details: data });
 
-  if (!response.ok)
-    return res
-      .status(response.status)
-      .json({ error: "Erro ao criar card", details: data });
+      return res.status(200).json({ success: true, card: data });
+    }
 
-  return res.status(200).json({ success: true, card: data });
-}
     // ----------------- UPDATE CARD -----------------
     if (action === "update_card") {
       if (!cardId)
@@ -66,12 +63,17 @@ if (action === "create_card") {
           .status(400)
           .json({ error: "'cardId' é obrigatório para atualização" });
 
+      const url = `https://api.trello.com/1/cards/${cardId}`;
+      const params = new URLSearchParams({
+        key: process.env.TRELLO_KEY,
+        token: process.env.TRELLO_TOKEN,
+      }).toString();
+
       const body = {};
       if (name) body.name = name;
       if (desc) body.desc = desc;
 
-      const url = `https://api.trello.com/1/cards/${cardId}?key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
-      const response = await fetch(url, {
+      const response = await fetch(`${url}?${params}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -99,8 +101,14 @@ if (action === "create_card") {
           .status(400)
           .json({ error: "cardId e memberId são obrigatórios" });
 
-      const url = `https://api.trello.com/1/cards/${cardId}/idMembers?value=${memberId}&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
-      const response = await fetch(url, { method: "POST" });
+      const url = `https://api.trello.com/1/cards/${cardId}/idMembers`;
+      const params = new URLSearchParams({
+        value: memberId,
+        key: process.env.TRELLO_KEY,
+        token: process.env.TRELLO_TOKEN,
+      }).toString();
+
+      const response = await fetch(`${url}?${params}`, { method: "POST" });
 
       let data;
       try {
@@ -124,8 +132,14 @@ if (action === "create_card") {
           .status(400)
           .json({ error: "cardId e labelId são obrigatórios" });
 
-      const url = `https://api.trello.com/1/cards/${cardId}/idLabels?value=${labelId}&key=${process.env.TRELLO_KEY}&token=${process.env.TRELLO_TOKEN}`;
-      const response = await fetch(url, { method: "POST" });
+      const url = `https://api.trello.com/1/cards/${cardId}/idLabels`;
+      const params = new URLSearchParams({
+        value: labelId,
+        key: process.env.TRELLO_KEY,
+        token: process.env.TRELLO_TOKEN,
+      }).toString();
+
+      const response = await fetch(`${url}?${params}`, { method: "POST" });
 
       let data;
       try {
@@ -140,6 +154,37 @@ if (action === "create_card") {
           .json({ error: "Erro ao adicionar label", details: data });
 
       return res.status(200).json({ success: true, label: labelId });
+    }
+
+    // ----------------- MOVE CARD -----------------
+    if (action === "move_card") {
+      if (!cardId || !listId)
+        return res
+          .status(400)
+          .json({ error: "cardId e listId são obrigatórios" });
+
+      const url = `https://api.trello.com/1/cards/${cardId}`;
+      const params = new URLSearchParams({
+        idList: listId,
+        key: process.env.TRELLO_KEY,
+        token: process.env.TRELLO_TOKEN,
+      }).toString();
+
+      const response = await fetch(`${url}?${params}`, { method: "PUT" });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        data = await response.text();
+      }
+
+      if (!response.ok)
+        return res
+          .status(response.status)
+          .json({ error: "Erro ao mover card", details: data });
+
+      return res.status(200).json({ success: true, movedTo: listId, card: data });
     }
 
     // ----------------- GET BOARD (não alterado) -----------------
@@ -194,8 +239,10 @@ if (action === "create_card") {
     // ----------------- AÇÃO INVÁLIDA -----------------
     return res.status(400).json({ error: "Ação inválida" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ error: "Erro na integração com Trello", details: error.message });
+    console.error("Erro geral:", error);
+    return res.status(500).json({
+      error: "Erro na integração com Trello",
+      details: error.message,
+    });
   }
 }
