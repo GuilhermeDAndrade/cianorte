@@ -208,7 +208,7 @@ export default async function handler(req, res) {
       if (!boardId)
         return res.status(400).json({ error: "'boardId' é obrigatório" });
 
-      if (boardCache[boardId] && !req.query.refresh) {
+      if (boardCache[boardId] && req.query.refresh) {
         return res.status(200).json(boardCache[boardId]);
       }
 
